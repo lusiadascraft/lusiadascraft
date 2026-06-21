@@ -11,9 +11,9 @@
 |:--:|:--:|:--:|
 | **285 521** | **14** | **2 953** |
 
-### 📦 Estatísticas por plugin
+### 📦 Estatísticas por plugin/softwares
 
-| Plugin | Linhas de código | Ficheiros | Linguagem principal |
+| Plugin/softwares | Linhas de código | Ficheiros | Linguagem principal |
 |:--|--:|--:|:--|
 | 🔒 `LusoCore` | **124 326** | **1 294** | ☕ `Java` |
 | 🔒 `Vouchers` | **73 037** | **694** | ☕ `Java` |
