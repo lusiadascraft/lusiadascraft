@@ -320,13 +320,13 @@ jobs:
 
           block = f"""
           <!-- CODE-STATS:START -->
-          ## 🧩 Plugins personalizados do LusíadasCraft
+          ## 🧩 Plugins/softwares personalizados do LusíadasCraft
 
-          > Estas estatísticas incluem os plugins personalizados desenvolvidos para o **LusíadasCraft**.
+          > Estas estatísticas incluem os plugins/softwares personalizados desenvolvidos para o **LusíadasCraft**.
 
           ### 📊 Visão geral
 
-          | 💻 Linhas de código | 🧩 Plugins analisados | 📄 Ficheiros |
+          | 💻 Linhas de código | 🧩 Plugins/softwares analisados | 📄 Ficheiros |
           |:--:|:--:|:--:|
           | **{format_number(total_lines)}** | **{format_number(len(repository_stats))}** | **{format_number(total_files)}** |
 
