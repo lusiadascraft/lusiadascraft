@@ -3,27 +3,42 @@
 <!-- CODE-STATS:START -->
 ## 🧩 Plugins personalizados do LusíadasCraft
 
-> Estas estatísticas incluem apenas o código dos **plugins personalizados desenvolvidos para o servidor LusíadasCraft**.
+> Estas estatísticas incluem os plugins personalizados desenvolvidos para o **LusíadasCraft**. As linhas apresentadas incluem código e comentários.
 
 ### 📊 Visão geral
 
-| 💻 Linhas de código | 🧩 Plugins analisados | 📄 Ficheiros | 💬 Comentários |
-|:--:|:--:|:--:|:--:|
-| **281 717** | **13** | **3 029** | **39 647** |
+| 💻 Linhas de código | 🧩 Plugins analisados | 📄 Ficheiros |
+|:--:|:--:|:--:|
+| **321 364** | **13** | **3 029** |
+
+### 📦 Estatísticas por plugin
+
+| Plugin | Linhas de código | Ficheiros | Linguagem principal |
+|:--|--:|--:|:--|
+| 🔒 `LusoCore` | **124 326** | **1 294** | ☕ `Java` |
+| 🔒 `Vouchers` | **73 037** | **694** | ☕ `Java` |
+| 🔒 `RedisChat` | **55 754** | **324** | 🌐 `HTML` |
+| 🔒 `LusoCore-Addon` | **45 572** | **493** | ☕ `Java` |
+| 🔒 `LusoIlhas` | **6 274** | **54** | ☕ `Java` |
+| 🔒 `LusoMod` | **6 157** | **74** | ☕ `Java` |
+| 🔒 `LusoPlots` | **5 009** | **38** | ☕ `Java` |
+| 🔒 `LusoDetected` | **2 028** | **17** | ☕ `Java` |
+| 🔒 `LusoSpwaners` | **1 965** | **16** | ☕ `Java` |
+| 🔒 `LusoEventos` | **906** | **19** | ☕ `Java` |
+| 🔒 `LusoAutoFarm` | **336** | **6** | ☕ `Java` |
+| 🔒 `IntroHub` | **0** | **0** | — |
+| 🔒 `LusoTutorial` | **0** | **0** | — |
 
 ### 🛠️ Linguagens utilizadas
 
 | Linguagem | Linhas de código | Utilização |
 |:--|--:|:--|
-| ☕ `Java` | **225 011** | `████████░░` 79,9% |
-| 🌐 `HTML` | **41 096** | `█░░░░░░░░░` 14,6% |
-| ⚙️ `YAML` | **10 611** | `░░░░░░░░░░` 3,8% |
-| 💻 `Maven` | **1 642** | `░░░░░░░░░░` 0,6% |
-| 🎨 `CSS` | **1 161** | `░░░░░░░░░░` 0,4% |
-| 🟨 `JavaScript` | **887** | `░░░░░░░░░░` 0,3% |
-| 📚 `Outras` | **1 309** | `░░░░░░░░░░` 0,5% |
-
-<sub>Não são contabilizadas dependências, bibliotecas externas, builds nem código gerado automaticamente.</sub><br>
-<sub>Os valores incluem projetos públicos e privados e são atualizados automaticamente através do GitHub Actions.</sub>
+| ☕ `Java` | **261 757** | `████████░░` 81,5% |
+| 🌐 `HTML` | **42 496** | `█░░░░░░░░░` 13,2% |
+| ⚙️ `YAML` | **11 118** | `░░░░░░░░░░` 3,5% |
+| 💻 `Maven` | **1 739** | `░░░░░░░░░░` 0,5% |
+| 🎨 `CSS` | **1 271** | `░░░░░░░░░░` 0,4% |
+| 🟨 `JavaScript` | **984** | `░░░░░░░░░░` 0,3% |
+| 📚 `Outras` | **1 999** | `░░░░░░░░░░` 0,6% |
 
 <!-- CODE-STATS:END -->
