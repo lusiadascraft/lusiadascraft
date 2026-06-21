@@ -1,15 +1,15 @@
 ## 📊 Estatísticas de código
 
 <!-- CODE-STATS:START -->
-## 🧩 Plugins personalizados do LusíadasCraft
+## 🧩 Plugins/softwares personalizados do LusíadasCraft
 
-> Estas estatísticas incluem os plugins personalizados desenvolvidos para o **LusíadasCraft**.
+> Estas estatísticas incluem os plugins/softwares personalizados desenvolvidos para o **LusíadasCraft**.
 
 ### 📊 Visão geral
 
-| 💻 Linhas de código | 🧩 Plugins analisados | 📄 Ficheiros |
+| 💻 Linhas de código | 🧩 Plugins/softwares analisados | 📄 Ficheiros |
 |:--:|:--:|:--:|
-| **285 521** | **13** | **2 953** |
+| **285 521** | **14** | **2 953** |
 
 ### 📦 Estatísticas por plugin
 
@@ -28,6 +28,7 @@
 | 🔒 `LusoSpwaners` | **1 965** | **16** | ☕ `Java` |
 | 🔒 `LusoEventos` | **906** | **19** | ☕ `Java` |
 | 🔒 `LusoAutoFarm` | **336** | **6** | ☕ `Java` |
+| 🔒 `LusoPaper` | **0** | **0** | — |
 
 ### 🛠️ Linguagens utilizadas
 
