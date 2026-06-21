@@ -260,7 +260,7 @@ jobs:
 
           if repository_rows:
               repositories_table = "\n".join([
-                  "| Plugin | Linhas de código | Ficheiros | Linguagem principal |",
+                  "| Plugin/softwares | Linhas de código | Ficheiros | Linguagem principal |",
                   "|:--|--:|--:|:--|",
                   *repository_rows,
               ])
@@ -330,7 +330,7 @@ jobs:
           |:--:|:--:|:--:|
           | **{format_number(total_lines)}** | **{format_number(len(repository_stats))}** | **{format_number(total_files)}** |
 
-          ### 📦 Estatísticas por plugin
+          ### 📦 Estatísticas por plugin/softwares
 
           {repositories_table}
 
