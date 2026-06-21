@@ -1,7 +1,11 @@
-name: Atualizar estatísticas dos plugins
+name: Atualizar estatísticas por plugin
 
 "on":
   workflow_dispatch: {}
+  push:
+    paths:
+      - ".github/workflows/update-code-stats.yml"
+      - ".github/workflows/update-code-stats-por-plugin.yml"
   schedule:
     - cron: "15 3 * * *"
 
@@ -33,8 +37,9 @@ jobs:
             exit 1
           fi
 
-          rm -rf repositories repos.txt
+          rm -rf repositories repos.tsv cloned-repos.tsv
           mkdir -p repositories
+          : > cloned-repos.tsv
 
           gh api --paginate \
             -H "X-GitHub-Api-Version: 2022-11-28" \
@@ -44,14 +49,15 @@ jobs:
               | select(.fork == false)
               | select(.archived == false)
               | select(.disabled == false)
-              | .full_name
-            ' > repos.txt
+              | [.full_name, .name, (.private | tostring)]
+              | @tsv
+            ' > repos.tsv
 
           CLONED_COUNT=0
           FAILED_COUNT=0
           INDEX=0
 
-          while IFS= read -r FULL_NAME; do
+          while IFS=$'\t' read -r FULL_NAME REPOSITORY_NAME IS_PRIVATE; do
             if [ -z "$FULL_NAME" ]; then
               continue
             fi
@@ -66,12 +72,17 @@ jobs:
             if gh repo clone "$FULL_NAME" "$TARGET" -- \
               --depth 1 \
               --quiet > /dev/null 2>&1; then
+              printf '%s\t%s\t%s\n' \
+                "$TARGET" \
+                "$REPOSITORY_NAME" \
+                "$IS_PRIVATE" >> cloned-repos.tsv
+
               CLONED_COUNT=$((CLONED_COUNT + 1))
             else
               rm -rf "$TARGET"
               FAILED_COUNT=$((FAILED_COUNT + 1))
             fi
-          done < repos.txt
+          done < repos.tsv
 
           echo "REPO_COUNT=$CLONED_COUNT" >> "$GITHUB_ENV"
           echo "FAILED_COUNT=$FAILED_COUNT" >> "$GITHUB_ENV"
@@ -79,54 +90,27 @@ jobs:
           echo "Plugins analisados: $CLONED_COUNT"
           echo "Plugins que não foram analisados: $FAILED_COUNT"
 
-      - name: Contar linhas e linguagens
-        run: |
-          set -euo pipefail
-
-          if [ "${REPO_COUNT:-0}" -eq 0 ]; then
-            printf '%s\n' '{"SUM":{"code":0,"comment":0,"blank":0,"nFiles":0}}' > cloc.json
-          else
-            cloc repositories \
-              --exclude-dir=.git,.github,.idea,libs,raget,target,build,node_modules,dist,out,.gradle,vendor,generated,logs,cache \
-              --exclude-ext=md,txt,rst,adoc,log \
-              --json \
-              --out=cloc.json
-          fi
-
-      - name: Atualizar as estatísticas no README
+      - name: Analisar os plugins e atualizar o README
         env:
-          REPO_COUNT: ${{ env.REPO_COUNT }}
           FAILED_COUNT: ${{ env.FAILED_COUNT }}
         run: |
           python3 <<'PY'
           import json
           import os
           import re
+          import subprocess
           import textwrap
+          from collections import defaultdict
           from pathlib import Path
 
-          with open("cloc.json", encoding="utf-8") as file:
-              result = json.load(file)
+          EXCLUDED_DIRECTORIES = (
+              ".git,.github,.idea,libs,raget,target,build,node_modules,"
+              "dist,out,.gradle,vendor,generated,logs,cache"
+          )
 
-          totals = result.get("SUM", {})
+          EXCLUDED_EXTENSIONS = "md,txt,rst,adoc,log"
 
-          plugin_count = int(os.environ.get("REPO_COUNT", "0"))
-          failed_count = int(os.environ.get("FAILED_COUNT", "0"))
-          code_lines = int(totals.get("code", 0))
-          comment_lines = int(totals.get("comment", 0))
-          files = int(totals.get("nFiles", 0))
-
-          def format_number(value):
-              return f"{int(value):,}".replace(",", " ")
-
-          def format_percentage(value):
-              return f"{value:.1f}".replace(".", ",")
-
-          def create_bar(percentage):
-              filled = max(0, min(10, round(percentage / 10)))
-              return "█" * filled + "░" * (10 - filled)
-
-          language_icons = {
+          LANGUAGE_ICONS = {
               "Java": "☕",
               "Kotlin": "🟣",
               "JavaScript": "🟨",
@@ -147,40 +131,167 @@ jobs:
               "PowerShell": "💠",
           }
 
-          languages = []
+          LANGUAGE_NAMES = {
+              "Bourne Shell": "Shell",
+          }
 
-          for language, data in result.items():
-              if language in {"header", "SUM"}:
-                  continue
+          def format_number(value):
+              return f"{int(value):,}".replace(",", " ")
 
-              if not isinstance(data, dict):
-                  continue
+          def format_percentage(value):
+              return f"{value:.1f}".replace(".", ",")
 
-              lines = int(data.get("code", 0))
+          def create_bar(percentage):
+              filled = max(0, min(10, round(percentage / 10)))
+              return "█" * filled + "░" * (10 - filled)
 
-              if lines > 0:
-                  languages.append((language, lines))
+          def count_lines(data):
+              return int(data.get("code", 0)) + int(data.get("comment", 0))
 
-          languages.sort(key=lambda item: item[1], reverse=True)
+          def analyse_repository(path, output_file):
+              command = [
+                  "cloc",
+                  str(path),
+                  f"--exclude-dir={EXCLUDED_DIRECTORIES}",
+                  f"--exclude-ext={EXCLUDED_EXTENSIONS}",
+                  "--json",
+                  f"--out={output_file}",
+              ]
 
-          displayed_languages = languages[:6]
-          remaining_languages = languages[6:]
+              subprocess.run(
+                  command,
+                  check=False,
+                  stdout=subprocess.DEVNULL,
+                  stderr=subprocess.DEVNULL,
+              )
+
+              if not output_file.exists():
+                  return {"SUM": {"code": 0, "comment": 0, "nFiles": 0}}
+
+              try:
+                  return json.loads(output_file.read_text(encoding="utf-8"))
+              except (json.JSONDecodeError, OSError):
+                  return {"SUM": {"code": 0, "comment": 0, "nFiles": 0}}
+
+          metadata_file = Path("cloned-repos.tsv")
+          stats_directory = Path("repository-stats")
+          stats_directory.mkdir(exist_ok=True)
+
+          repositories = []
+
+          if metadata_file.exists():
+              for line in metadata_file.read_text(encoding="utf-8").splitlines():
+                  if not line.strip():
+                      continue
+
+                  path_value, name, is_private = line.split("\t", 2)
+                  repositories.append({
+                      "path": Path(path_value),
+                      "name": name,
+                      "private": is_private == "true",
+                  })
+
+          repository_stats = []
+          language_totals = defaultdict(int)
+          total_lines = 0
+          total_files = 0
+
+          for index, repository in enumerate(repositories, start=1):
+              output_file = stats_directory / f"repository_{index}.json"
+              result = analyse_repository(repository["path"], output_file)
+              totals = result.get("SUM", {})
+
+              lines = count_lines(totals)
+              files = int(totals.get("nFiles", 0))
+              languages = []
+
+              for language, data in result.items():
+                  if language in {"header", "SUM"}:
+                      continue
+
+                  if not isinstance(data, dict):
+                      continue
+
+                  language_lines = count_lines(data)
+
+                  if language_lines <= 0:
+                      continue
+
+                  languages.append((language, language_lines))
+                  language_totals[language] += language_lines
+
+              languages.sort(key=lambda item: item[1], reverse=True)
+              main_language = languages[0][0] if languages else None
+
+              repository_stats.append({
+                  "name": repository["name"],
+                  "private": repository["private"],
+                  "lines": lines,
+                  "files": files,
+                  "main_language": main_language,
+              })
+
+              total_lines += lines
+              total_files += files
+
+          repository_stats.sort(
+              key=lambda repository: (-repository["lines"], repository["name"].lower())
+          )
+
+          repository_rows = []
+
+          for repository in repository_stats:
+              visibility = "🔒" if repository["private"] else "🌐"
+              language = repository["main_language"]
+
+              if language:
+                  icon = LANGUAGE_ICONS.get(language, "💻")
+                  display_name = LANGUAGE_NAMES.get(language, language)
+                  language_text = f"{icon} `{display_name}`"
+              else:
+                  language_text = "—"
+
+              repository_rows.append(
+                  f"| {visibility} `{repository['name']}` "
+                  f"| **{format_number(repository['lines'])}** "
+                  f"| **{format_number(repository['files'])}** "
+                  f"| {language_text} |"
+              )
+
+          if repository_rows:
+              repositories_table = "\n".join([
+                  "| Plugin | Linhas de código | Ficheiros | Linguagem principal |",
+                  "|:--|--:|--:|:--|",
+                  *repository_rows,
+              ])
+          else:
+              repositories_table = "_Ainda não existem plugins para apresentar._"
+
+          sorted_languages = sorted(
+              language_totals.items(),
+              key=lambda item: item[1],
+              reverse=True,
+          )
+
+          displayed_languages = sorted_languages[:6]
+          remaining_languages = sorted_languages[6:]
           language_rows = []
 
           for language, lines in displayed_languages:
-              percentage = lines / code_lines * 100 if code_lines else 0
-              icon = language_icons.get(language, "💻")
+              percentage = lines / total_lines * 100 if total_lines else 0
+              icon = LANGUAGE_ICONS.get(language, "💻")
+              display_name = LANGUAGE_NAMES.get(language, language)
               bar = create_bar(percentage)
 
               language_rows.append(
-                  f"| {icon} `{language}` "
+                  f"| {icon} `{display_name}` "
                   f"| **{format_number(lines)}** "
                   f"| `{bar}` {format_percentage(percentage)}% |"
               )
 
           if remaining_languages:
               other_lines = sum(lines for _, lines in remaining_languages)
-              percentage = other_lines / code_lines * 100 if code_lines else 0
+              percentage = other_lines / total_lines * 100 if total_lines else 0
               bar = create_bar(percentage)
 
               language_rows.append(
@@ -198,6 +309,7 @@ jobs:
           else:
               languages_table = "_Ainda não existem linguagens para apresentar._"
 
+          failed_count = int(os.environ.get("FAILED_COUNT", "0"))
           warning = ""
 
           if failed_count > 0:
@@ -210,20 +322,21 @@ jobs:
           <!-- CODE-STATS:START -->
           ## 🧩 Plugins personalizados do LusíadasCraft
 
-          > Estas estatísticas incluem apenas o código dos **plugins personalizados desenvolvidos para o servidor LusíadasCraft**.
+          > Estas estatísticas incluem os plugins personalizados desenvolvidos para o **LusíadasCraft**. As linhas apresentadas incluem código e comentários.
 
           ### 📊 Visão geral
 
-          | 💻 Linhas de código | 🧩 Plugins analisados | 📄 Ficheiros | 💬 Comentários |
-          |:--:|:--:|:--:|:--:|
-          | **{format_number(code_lines)}** | **{format_number(plugin_count)}** | **{format_number(files)}** | **{format_number(comment_lines)}** |
+          | 💻 Linhas de código | 🧩 Plugins analisados | 📄 Ficheiros |
+          |:--:|:--:|:--:|
+          | **{format_number(total_lines)}** | **{format_number(len(repository_stats))}** | **{format_number(total_files)}** |
+
+          ### 📦 Estatísticas por plugin
+
+          {repositories_table}
 
           ### 🛠️ Linguagens utilizadas
 
           {languages_table}
-
-          <sub>Não são contabilizadas dependências, bibliotecas externas, builds nem código gerado automaticamente.</sub><br>
-          <sub>Os valores incluem projetos públicos e privados e são atualizados automaticamente através do GitHub Actions.</sub>
           {warning}
           <!-- CODE-STATS:END -->
           """
@@ -258,5 +371,5 @@ jobs:
             exit 0
           fi
 
-          git commit -m "Atualizar estatísticas dos plugins"
+          git commit -m "Atualizar estatísticas por plugin"
           git push
