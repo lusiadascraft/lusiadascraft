@@ -1,0 +1,322 @@
+```yaml
+name: Atualizar estatísticas dos plugins
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    # Executa todos os dias às 03:15 UTC
+    - cron: "15 3 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  update-code-stats:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Obter o repositório do perfil
+        uses: actions/checkout@v6
+
+      - name: Instalar o CLOC
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cloc
+
+      - name: Obter os repositórios públicos e privados
+        env:
+          GH_TOKEN: ${{ secrets.CODE_STATS_TOKEN }}
+          PROFILE_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "O secret CODE_STATS_TOKEN não está configurado."
+            exit 1
+          fi
+
+          rm -rf repositories
+          mkdir -p repositories
+
+          # Obtém todos os repositórios pertencentes à conta.
+          gh api --paginate \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "user/repos?per_page=100&visibility=all&affiliation=owner&sort=full_name" \
+            --jq '
+              .[]
+              | select(.fork == false)
+              | select(.archived == false)
+              | select(.disabled == false)
+              | .full_name
+            ' > repos.txt
+
+          CLONED_COUNT=0
+          FAILED_COUNT=0
+          INDEX=0
+
+          while IFS= read -r FULL_NAME; do
+            if [ -z "$FULL_NAME" ]; then
+              continue
+            fi
+
+            # Não conta o próprio repositório do perfil.
+            if [ "$FULL_NAME" = "$PROFILE_REPOSITORY" ]; then
+              continue
+            fi
+
+            INDEX=$((INDEX + 1))
+            TARGET="repositories/plugin_${INDEX}"
+
+            # Os nomes dos repositórios privados não aparecem nos logs.
+            if gh repo clone "$FULL_NAME" "$TARGET" -- \
+              --depth 1 \
+              --quiet > /dev/null 2>&1; then
+              CLONED_COUNT=$((CLONED_COUNT + 1))
+            else
+              rm -rf "$TARGET"
+              FAILED_COUNT=$((FAILED_COUNT + 1))
+            fi
+          done < repos.txt
+
+          echo "REPO_COUNT=$CLONED_COUNT" >> "$GITHUB_ENV"
+          echo "FAILED_COUNT=$FAILED_COUNT" >> "$GITHUB_ENV"
+
+          echo "Plugins analisados: $CLONED_COUNT"
+          echo "Plugins que não foram analisados: $FAILED_COUNT"
+
+      - name: Contar as linhas e linguagens
+        run: |
+          set -euo pipefail
+
+          if [ "${REPO_COUNT:-0}" -eq 0 ]; then
+            cat > cloc.json <<'JSON'
+          {
+            "SUM": {
+              "code": 0,
+              "comment": 0,
+              "blank": 0,
+              "nFiles": 0
+            }
+          }
+          JSON
+          else
+            cloc repositories \
+              --exclude-dir=.git,.github,.idea,libs,raget,target,build,node_modules,dist,out,.gradle,vendor,generated,logs,cache \
+              --exclude-ext=md,txt,rst,adoc,log \
+              --json \
+              --out=cloc.json
+          fi
+
+      - name: Atualizar as estatísticas no README
+        env:
+          REPO_COUNT: ${{ env.REPO_COUNT }}
+          FAILED_COUNT: ${{ env.FAILED_COUNT }}
+        run: |
+          python3 <<'PY'
+          import json
+          import os
+          import re
+          import textwrap
+          from pathlib import Path
+
+          with open("cloc.json", encoding="utf-8") as file:
+              result = json.load(file)
+
+          totals = result.get("SUM", {})
+
+          plugin_count = int(os.environ.get("REPO_COUNT", "0"))
+          failed_count = int(os.environ.get("FAILED_COUNT", "0"))
+
+          code_lines = int(totals.get("code", 0))
+          comment_lines = int(totals.get("comment", 0))
+          blank_lines = int(totals.get("blank", 0))
+          files = int(totals.get("nFiles", 0))
+
+          def format_number(value):
+              return f"{int(value):,}".replace(",", " ")
+
+          def format_percentage(value):
+              return f"{value:.1f}".replace(".", ",")
+
+          def create_bar(percentage):
+              filled = round(percentage / 10)
+              filled = max(0, min(10, filled))
+
+              return "█" * filled + "░" * (10 - filled)
+
+          language_icons = {
+              "Java": "☕",
+              "Kotlin": "🟣",
+              "JavaScript": "🟨",
+              "TypeScript": "🔷",
+              "Python": "🐍",
+              "C#": "🟪",
+              "C++": "🔵",
+              "C": "🔵",
+              "Lua": "🌙",
+              "PHP": "🐘",
+              "SQL": "🗄️",
+              "YAML": "⚙️",
+              "JSON": "📦",
+              "XML": "📄",
+              "HTML": "🌐",
+              "CSS": "🎨",
+              "Bourne Shell": "🐚",
+              "PowerShell": "💠",
+          }
+
+          ignored_keys = {"header", "SUM"}
+
+          languages = []
+
+          for language, data in result.items():
+              if language in ignored_keys:
+                  continue
+
+              if not isinstance(data, dict):
+                  continue
+
+              lines = int(data.get("code", 0))
+
+              if lines <= 0:
+                  continue
+
+              languages.append((language, lines))
+
+          languages.sort(
+              key=lambda item: item[1],
+              reverse=True
+          )
+
+          displayed_languages = languages[:6]
+          remaining_languages = languages[6:]
+
+          language_rows = []
+
+          for language, lines in displayed_languages:
+              percentage = (
+                  lines / code_lines * 100
+                  if code_lines > 0
+                  else 0
+              )
+
+              icon = language_icons.get(language, "💻")
+              bar = create_bar(percentage)
+
+              language_rows.append(
+                  f"| {icon} `{language}` "
+                  f"| **{format_number(lines)}** "
+                  f"| `{bar}` {format_percentage(percentage)}% |"
+              )
+
+          if remaining_languages:
+              other_lines = sum(
+                  lines for _, lines in remaining_languages
+              )
+
+              percentage = (
+                  other_lines / code_lines * 100
+                  if code_lines > 0
+                  else 0
+              )
+
+              bar = create_bar(percentage)
+
+              language_rows.append(
+                  f"| 📚 `Outras` "
+                  f"| **{format_number(other_lines)}** "
+                  f"| `{bar}` {format_percentage(percentage)}% |"
+              )
+
+          if language_rows:
+              languages_table = "\n".join([
+                  "| Linguagem | Linhas de código | Utilização |",
+                  "|:--|--:|:--|",
+                  *language_rows,
+              ])
+          else:
+              languages_table = (
+                  "_Ainda não existem linguagens para apresentar._"
+              )
+
+          warning = ""
+
+          if failed_count > 0:
+              warning = (
+                  "\n\n> ⚠️ "
+                  f"Não foi possível analisar "
+                  f"{format_number(failed_count)} plugin(s)."
+              )
+
+          block = f"""
+          <!-- CODE-STATS:START -->
+          ## 🧩 Plugins personalizados do LusíadasCraft
+
+          > Estas estatísticas incluem apenas o código dos **plugins personalizados desenvolvidos para o servidor LusíadasCraft**.
+
+          ### 📊 Visão geral
+
+          | 💻 Linhas de código | 🧩 Plugins analisados | 📄 Ficheiros | 💬 Comentários |
+          |:--:|:--:|:--:|:--:|
+          | **{format_number(code_lines)}** | **{format_number(plugin_count)}** | **{format_number(files)}** | **{format_number(comment_lines)}** |
+
+          ### 🛠️ Linguagens utilizadas
+
+          {languages_table}
+
+          <sub>Não são contabilizadas dependências, bibliotecas externas, builds nem código gerado automaticamente.</sub><br>
+          <sub>Os valores incluem projetos públicos e privados e são atualizados automaticamente através do GitHub Actions.</sub>
+          {warning}
+          <!-- CODE-STATS:END -->
+          """
+
+          block = textwrap.dedent(block).strip()
+
+          readme = Path("README.md")
+
+          if readme.exists():
+              content = readme.read_text(encoding="utf-8")
+          else:
+              content = ""
+
+          pattern = (
+              r"<!-- CODE-STATS:START -->"
+              r".*?"
+              r"<!-- CODE-STATS:END -->"
+          )
+
+          if re.search(pattern, content, flags=re.DOTALL):
+              content = re.sub(
+                  pattern,
+                  block,
+                  content,
+                  flags=re.DOTALL
+              )
+          else:
+              content = (
+                  content.rstrip()
+                  + "\n\n"
+                  + block
+                  + "\n"
+              )
+
+          readme.write_text(content, encoding="utf-8")
+          PY
+
+      - name: Guardar as alterações
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add README.md
+
+          if git diff --cached --quiet; then
+            echo "Não existem alterações para guardar."
+            exit 0
+          fi
+
+          git commit -m "Atualizar estatísticas dos plugins"
+          git push
+```
