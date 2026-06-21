@@ -3,7 +3,7 @@
 <!-- CODE-STATS:START -->
 ## 🧩 Plugins personalizados do LusíadasCraft
 
-> Estas estatísticas incluem os plugins personalizados desenvolvidos para o **LusíadasCraft**. As linhas apresentadas incluem código e comentários.
+> Estas estatísticas incluem os plugins personalizados desenvolvidos para o **LusíadasCraft**.
 
 ### 📊 Visão geral
 
