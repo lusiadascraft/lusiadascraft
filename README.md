@@ -9,7 +9,7 @@
 
 | 💻 Linhas de código | 🧩 Plugins/softwares analisados | 📄 Ficheiros |
 |:--:|:--:|:--:|
-| **715 368** | **14** | **7 205** |
+| **715 422** | **14** | **7 206** |
 
 ### 📦 Estatísticas por plugin/softwares
 
@@ -18,7 +18,7 @@
 | 🔒 `LusoPaper` | **426 224** | **4 222** | ☕ `Java` |
 | 🔒 `LusoCore` | **124 326** | **1 294** | ☕ `Java` |
 | 🔒 `Vouchers` | **73 037** | **694** | ☕ `Java` |
-| 🔒 `LusoCore-Addon` | **48 207** | **517** | ☕ `Java` |
+| 🔒 `LusoCore-Addon` | **48 261** | **518** | ☕ `Java` |
 | 🔒 `RedisChat` | **11 314** | **112** | ☕ `Java` |
 | 🔒 `LusoMod` | **7 145** | **80** | ☕ `Java` |
 | 🔒 `LusoIlhas` | **6 274** | **54** | ☕ `Java` |
@@ -34,7 +34,7 @@
 
 | Linguagem | Linhas de código | Utilização |
 |:--|--:|:--|
-| ☕ `Java` | **561 733** | `████████░░` 78,5% |
+| ☕ `Java` | **561 787** | `████████░░` 78,5% |
 | 💻 `diff` | **135 931** | `██░░░░░░░░` 19,0% |
 | ⚙️ `YAML` | **11 650** | `░░░░░░░░░░` 1,6% |
 | 💻 `Maven` | **1 810** | `░░░░░░░░░░` 0,3% |
