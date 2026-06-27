@@ -9,7 +9,7 @@
 
 | 💻 Linhas de código | 🧩 Plugins/softwares analisados | 📄 Ficheiros |
 |:--:|:--:|:--:|
-| **749 555** | **16** | **7 564** |
+| **751 745** | **16** | **7 596** |
 
 ### 📦 Estatísticas por plugin/softwares
 
@@ -20,15 +20,15 @@
 | 🔒 `Vouchers` | **73 037** | **694** | ☕ `Java` |
 | 🔒 `LusoCore-Addon` | **47 902** | **518** | ☕ `Java` |
 | 🔒 `HuskSync` | **21 072** | **173** | ☕ `Java` |
-| 🔒 `AxMinions` | **11 325** | **171** | 🟣 `Kotlin` |
+| 🔒 `AxMinions` | **12 256** | **189** | 🟣 `Kotlin` |
 | 🔒 `RedisChat` | **11 314** | **112** | ☕ `Java` |
 | 🌐 `LusoMod` | **7 079** | **80** | ☕ `Java` |
 | 🔒 `LusoIlhas` | **6 274** | **54** | ☕ `Java` |
 | 🔒 `LusoTutorial` | **5 011** | **107** | ☕ `Java` |
 | 🔒 `LusoPlots` | **5 009** | **38** | ☕ `Java` |
 | 🔒 `IntroHub` | **3 586** | **29** | ☕ `Java` |
+| 🔒 `LusoSpwaners` | **3 224** | **30** | ☕ `Java` |
 | 🔒 `LusoDetected` | **2 028** | **17** | ☕ `Java` |
-| 🔒 `LusoSpwaners` | **1 965** | **16** | ☕ `Java` |
 | 🔒 `LusoEventos` | **906** | **19** | ☕ `Java` |
 | 🔒 `LusoAutoFarm` | **336** | **6** | ☕ `Java` |
 
@@ -36,12 +36,12 @@
 
 | Linguagem | Linhas de código | Utilização |
 |:--|--:|:--|
-| ☕ `Java` | **581 766** | `████████░░` 77,6% |
+| ☕ `Java` | **583 013** | `████████░░` 77,6% |
 | 💻 `diff` | **135 931** | `██░░░░░░░░` 18,1% |
 | ⚙️ `YAML` | **14 401** | `░░░░░░░░░░` 1,9% |
-| 🟣 `Kotlin` | **9 210** | `░░░░░░░░░░` 1,2% |
-| 💻 `Gradle` | **2 182** | `░░░░░░░░░░` 0,3% |
-| 💻 `Maven` | **1 819** | `░░░░░░░░░░` 0,2% |
+| 🟣 `Kotlin` | **10 107** | `░░░░░░░░░░` 1,3% |
+| 💻 `Gradle` | **2 216** | `░░░░░░░░░░` 0,3% |
+| 💻 `Maven` | **1 831** | `░░░░░░░░░░` 0,2% |
 | 📚 `Outras` | **4 246** | `░░░░░░░░░░` 0,6% |
 
 <!-- CODE-STATS:END -->
