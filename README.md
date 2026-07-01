@@ -9,7 +9,7 @@
 
 | 💻 Linhas de código | 🧩 Plugins/softwares analisados | 📄 Ficheiros |
 |:--:|:--:|:--:|
-| **758 111** | **16** | **7 646** |
+| **758 169** | **16** | **7 646** |
 
 ### 📦 Estatísticas por plugin/softwares
 
@@ -21,7 +21,7 @@
 | 🔒 `LusoCore-Addon` | **47 902** | **518** | ☕ `Java` |
 | 🔒 `HuskSync` | **21 072** | **173** | ☕ `Java` |
 | 🔒 `AxMinions` | **12 281** | **189** | 🟣 `Kotlin` |
-| 🔒 `LusoPlots` | **11 350** | **88** | ☕ `Java` |
+| 🔒 `LusoPlots` | **11 408** | **88** | ☕ `Java` |
 | 🔒 `RedisChat` | **11 314** | **112** | ☕ `Java` |
 | 🌐 `LusoMod` | **7 079** | **80** | ☕ `Java` |
 | 🔒 `LusoIlhas` | **6 274** | **54** | ☕ `Java` |
@@ -36,7 +36,7 @@
 
 | Linguagem | Linhas de código | Utilização |
 |:--|--:|:--|
-| ☕ `Java` | **589 254** | `████████░░` 77,7% |
+| ☕ `Java` | **589 312** | `████████░░` 77,7% |
 | 💻 `diff` | **135 931** | `██░░░░░░░░` 17,9% |
 | ⚙️ `YAML` | **14 457** | `░░░░░░░░░░` 1,9% |
 | 🟣 `Kotlin` | **10 132** | `░░░░░░░░░░` 1,3% |
