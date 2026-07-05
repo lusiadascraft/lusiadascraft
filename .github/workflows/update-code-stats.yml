@@ -25,7 +25,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cloc
 
-      - name: Obter os repositórios públicos e privados
+      - name: Obter os repositórios públicos, privados e forks
         env:
           GH_TOKEN: ${{ secrets.CODE_STATS_TOKEN }}
           PROFILE_REPOSITORY: ${{ github.repository }}
@@ -39,7 +39,7 @@ jobs:
 
           rm -rf repositories repos.tsv cloned-repos.tsv
           mkdir -p repositories
-          : > cloned-repos.tsv
+          touch cloned-repos.tsv
 
           gh api --paginate \
             -H "X-GitHub-Api-Version: 2022-11-28" \
@@ -48,7 +48,7 @@ jobs:
               .[]
               | select(.archived == false)
               | select(.disabled == false)
-              | [.full_name, .name, (.private | tostring)]
+              | [.full_name, .name, (.private | tostring), (.fork | tostring)]
               | @tsv
             ' > repos.tsv
 
@@ -57,7 +57,7 @@ jobs:
           INDEX=0
 
           while IFS=$'\t' read -r FULL_NAME REPOSITORY_NAME IS_PRIVATE IS_FORK; do
-            if [ -z "$FULL_NAME" ]; then
+            if [ -z "${FULL_NAME:-}" ]; then
               continue
             fi
 
@@ -68,15 +68,8 @@ jobs:
             INDEX=$((INDEX + 1))
             TARGET="repositories/plugin_${INDEX}"
 
-            if gh repo clone "$FULL_NAME" "$TARGET" -- \
-              --depth 1 \
-              --quiet > /dev/null 2>&1; then
-              printf '%s\t%s\t%s\n' \
-                "$TARGET" \
-                "$REPOSITORY_NAME" \
-                "$IS_PRIVATE"
-                "$IS_FORK" >> cloned-repos.tsv
-
+            if gh repo clone "$FULL_NAME" "$TARGET" -- --depth 1 --quiet > /dev/null 2>&1; then
+              printf '%s\t%s\t%s\t%s\n' "$TARGET" "$REPOSITORY_NAME" "$IS_PRIVATE" "$IS_FORK" >> cloned-repos.tsv
               CLONED_COUNT=$((CLONED_COUNT + 1))
             else
               rm -rf "$TARGET"
@@ -184,7 +177,16 @@ jobs:
                   if not line.strip():
                       continue
 
-                  path_value, name, is_private = line.split("\t", 2)
+                  parts = line.split("\t")
+
+                  if len(parts) < 3:
+                      continue
+
+                  path_value = parts[0]
+                  name = parts[1]
+                  is_private = parts[2]
+                  is_fork = parts[3] if len(parts) >= 4 else "false"
+
                   repositories.append({
                       "path": Path(path_value),
                       "name": name,
@@ -227,6 +229,7 @@ jobs:
               repository_stats.append({
                   "name": repository["name"],
                   "private": repository["private"],
+                  "fork": repository["fork"],
                   "lines": lines,
                   "files": files,
                   "main_language": main_language,
@@ -242,7 +245,13 @@ jobs:
           repository_rows = []
 
           for repository in repository_stats:
-              visibility = "🍴" if repository.get("fork") else ("🔒" if repository["private"] else "🌐")
+              if repository["fork"]:
+                  visibility = "🍴"
+              elif repository["private"]:
+                  visibility = "🔒"
+              else:
+                  visibility = "🌐"
+
               language = repository["main_language"]
 
               if language:
@@ -339,6 +348,9 @@ jobs:
 
           {languages_table}
           {warning}
+
+          > Legenda: 🌐 público · 🔒 privado · 🍴 fork
+
           <!-- CODE-STATS:END -->
           """
 
