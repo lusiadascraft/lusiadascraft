@@ -46,7 +46,6 @@ jobs:
             "user/repos?per_page=100&visibility=all&affiliation=owner&sort=full_name" \
             --jq '
               .[]
-              | select(.fork == false)
               | select(.archived == false)
               | select(.disabled == false)
               | [.full_name, .name, (.private | tostring)]
@@ -57,7 +56,7 @@ jobs:
           FAILED_COUNT=0
           INDEX=0
 
-          while IFS=$'\t' read -r FULL_NAME REPOSITORY_NAME IS_PRIVATE; do
+          while IFS=$'\t' read -r FULL_NAME REPOSITORY_NAME IS_PRIVATE IS_FORK; do
             if [ -z "$FULL_NAME" ]; then
               continue
             fi
@@ -75,7 +74,8 @@ jobs:
               printf '%s\t%s\t%s\n' \
                 "$TARGET" \
                 "$REPOSITORY_NAME" \
-                "$IS_PRIVATE" >> cloned-repos.tsv
+                "$IS_PRIVATE"
+                "$IS_FORK" >> cloned-repos.tsv
 
               CLONED_COUNT=$((CLONED_COUNT + 1))
             else
@@ -189,6 +189,7 @@ jobs:
                       "path": Path(path_value),
                       "name": name,
                       "private": is_private == "true",
+                      "fork": is_fork == "true",
                   })
 
           repository_stats = []
@@ -241,7 +242,7 @@ jobs:
           repository_rows = []
 
           for repository in repository_stats:
-              visibility = "🔒" if repository["private"] else "🌐"
+              visibility = "🍴" if repository.get("fork") else ("🔒" if repository["private"] else "🌐")
               language = repository["main_language"]
 
               if language:
